@@ -1,0 +1,43 @@
+# Example mediakeep settings (written for you on first run to %APPDATA%\mediakeep\config.yaml).
+# Most of these can be changed on the web app's Settings page.
+
+# The folder you are tidying, and where its items go. Leave destination empty to rename
+# everything where it is; set it to a folder to move items into it.
+workspace:
+  folder: null
+  destination: null
+  recent: []
+
+naming:
+  year_style: parens        # parens: Title (2014)   brackets: Title [2014]
+  id_tag: none              # none | tmdb | imdb  (adds an id tag to folder names)
+  keep_episode_titles: true
+  lores_tagging: true       # tag the smaller copy of a duplicate as "LoRes"
+  trust_folder_year: false
+  folder_jpg: true          # save the matched poster as folder.jpg
+
+behavior:
+  cross_volume: move        # move | copy (when the destination is on another drive)
+  auto_approve_confidence: 90
+  auto_approve_margin: 15
+  remember_choices: false   # tick "Remember this choice" by default when you pick a match
+
+hints_file: ''
+
+tmdb:
+  api_key: ''               # free key from themoviedb.org (Settings -> API)
+  read_token: ''            # or the longer "API Read Access Token" instead of api_key
+  language: en-US
+  cache_days: 30
+  requests_per_second: 20
+
+tools:
+  ffprobe: ffprobe          # optional (comes with ffmpeg); runtimes improve matching
+
+web:
+  host: 127.0.0.1
+  port: 8765
+  access_token: ''          # required if host is not 127.0.0.1
+  posters: true
+
+state_dir: ''               # where the database, logs and undo scripts go (default: %LOCALAPPDATA%\mediakeep)

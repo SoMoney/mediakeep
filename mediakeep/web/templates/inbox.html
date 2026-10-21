@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+{% from "_macros.html" import action_bar, clean, diff_html, file_count_label, folder_picker, kind_word, reason_text, select_all_header, status_pill, title_choice %}
+
+{% block title %}Folder{% endblock %}
+
+{% block main %}
+{% set ns = namespace(files=0) %}
+{% for row in inbox.rows %}
+  {% if row.selectable %}{% set ns.files = ns.files + row.file_count %}{% endif %}
+{% endfor %}
+
+{% set w = inbox.working %}
+<div class="page-head">
+  <div class="page-copy">
+    <h1>Folder</h1>
+    <p class="intro">Pick the folder to work on, choose where its items go, then add them to Execute. Nothing changes on disk until you apply there.</p>
+  </div>
+</div>
+
+<section class="flow" aria-label="Working folder and destination" data-flow data-workspace>
+  <div class="flow-card flow-from">
+    <div class="flow-step"><span class="flow-num">1</span> Working folder</div>
+    <div class="flow-path mono" data-working-folder>{{ w.source }}</div>
+    {% if inbox.folder != w.source %}
+      <div class="flow-meta">
+        showing only the subfolder <span class="mono">{{ inbox.folder }}</span>
+        · <a href="#" data-browse="{{ w.source }}" data-show-whole-source>Show the whole folder</a>
+      </div>
+    {% endif %}
+    <div class="flow-actions">
+      <button type="button" class="btn small" data-pick-workspace>Change folder…</button>
+      {% if w.recent | length > 1 %}
+        <label class="field compact">
+          <span class="sr-only">Recent folders</span>
+          <select data-recent-folder aria-label="Recent folders">
+            <option value="">Recent folders…</option>
+            {% for r in w.recent %}{% if r != w.source %}<option value="{{ r }}">{{ r }}</option>{% endif %}{% endfor %}
+          </select>
+        </label>
+      {% endif %}
+      <button type="button" class="btn small" data-rescan-folder="{{ inbox.folder }}">Rescan</button>
+    </div>
+    <div class="field-error" data-workspace-error hidden></div>
+  </div>
+
+  <div class="flow-arrow" aria-hidden="true">→</div>
+
+  <fieldset class="flow-card flow-to">
+    <legend class="flow-step"><span class="flow-num">2</span> Destination</legend>
+    <label class="dest-option{% if not w.destination_path %} selected{% endif %}">
+      <input type="radio" name="workspace-destination" value="here" data-workspace-destination {% if not w.destination_path %}checked{% endif %}>
+      <span class="dest-body">
+        <span class="dest-title">Rename here</span>
+        <span class="dest-line">Items stay in <span class="mono">{{ w.source }}</span>. Only their folder and file names change.</span>
+      </span>
+    </label>
+    <label class="dest-option{% if w.destination_path %} selected{% endif %}">
+      <input type="radio" name="workspace-destination" value="move" data-workspace-destination {% if w.destination_path %}checked{% endif %}>
+      <span class="dest-body">
+        <span class="dest-title">Move to another folder</span>
+        {% if w.destination_path %}
+          <span class="dest-line">Movies and shows go into <span class="mono" data-destination-path>{{ w.destination_path }}</span>, renamed.</span>
+          <span class="dest-line"><button type="button" class="link-button" data-pick-destination>Choose another folder…</button></span>
+        {% else %}
+          <span class="dest-line">Pick the folder they should go into.</span>
+        {% endif %}
+      </span>
+    </label>
+  </fieldset>
+</section>
+
+<div class="flow-crumbs">
+  <span class="flow-step"><span class="flow-num">3</span> Check the items</span>
+  <nav aria-label="Folder path" class="breadcrumb">
+    {% for crumb in inbox.breadcrumb %}
+      {% if not loop.first %}<span class="sep" aria-hidden="true">›</span>{% endif %}
+      {% if loop.last %}<span class="crumb-current mono" aria-current="location">{{ crumb.name }}</span>
+      {% else %}<a href="#" class="mono" data-browse="{{ crumb.path }}">{{ crumb.name }}</a>{% endif %}
+    {% endfor %}
+  </nav>
+</div>
+
+<div class="chips" role="toolbar" aria-label="Filters">
+  <button type="button" class="chip active" data-filter="all">All {{ inbox.counts.all }}</button>
+  <button type="button" class="chip" data-filter="ready">Ready {{ inbox.counts.ready }}</button>
+  <button type="button" class="chip" data-filter="needs">Needs you {{ inbox.counts.needs }}</button>
+  <button type="button" class="chip" data-filter="tidy">Already tidy {{ inbox.counts.tidy }}</button>
+  <button type="button" class="chip" data-filter="left">Left alone {{ inbox.counts.left }}</button>
+</div>
+
+<div class="table-box" data-select-list="inbox">
+  <table class="data-table">
+    <thead>
+      <tr>
+        {{ select_all_header("Select all ready items", "inbox") }}
+        <th scope="col">In the folder</th>
+        <th scope="col">mediakeep thinks it is</th>
+        <th scope="col">Will go to</th>
+        <th scope="col">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in inbox.rows %}
+        {% set card = row.cards[0] if row.cards | length == 1 else None %}
+        <tr
+          class="{% if row.status == 'left' %}dim{% endif %}"
+          data-status="{{ row.status }}"
+          data-item-key="{{ card.item_key if card else '' }}"
+          {% if card %}data-same-place="{{ 'true' if card.same_place else 'false' }}" data-mode="{{ 'in_place' if card.in_place else 'file' }}"{% endif %}
+        >
+          <td class="check-cell">
+            {% if row.selectable %}
+              <input type="checkbox" class="checkbox" data-select-row data-list="inbox" data-keys="{{ row.item_keys | join(',') }}" data-files="{{ row.file_count }}" aria-label="Select {{ row.name }}">
+            {% endif %}
+          </td>
+          <td>
+            <div class="name-cell">
+              <span class="name mono">{{ row.name }}</span>
+              <span class="sub">
+                {% if row.type == 'left' %}{{ clean(row.reason) }}{% elif row.file_count %}{{ file_count_label(row.file_count) }}{% endif %}
+              </span>
+            </div>
+          </td>
+          <td data-thinks-cell="true">
+            {% if card %}
+              <div class="thinks">
+                {{ kind_word(card.kind) }} · {{ clean(card.label) }}
+              </div>
+              {% if row.status == 'needs' and card.why_needs %}
+                <div class="why" data-why-needs>{{ card.why_needs }}</div>
+              {% elif row.status == 'ready' and card.identity and card.identity.title %}
+                <div class="why">Matched as {{ clean(card.identity.title) }}</div>
+              {% endif %}
+              {% if card.issues and card.issues[0].message %}
+                <div class="issue">{{ clean(card.issues[0].message) }}</div>
+              {% endif %}
+              {% if card.title_choice %}
+                {{ title_choice(card.title_choice) | safe }}
+              {% endif %}
+            {% else %}
+              <div class="thinks">{{ clean(row.reason) }}</div>
+            {% endif %}
+          </td>
+          <td data-go-cell="true">
+            {% if row.status == 'needs' and card and card.doubtful_pick %}
+              <div class="best-guess" data-doubtful>
+                <span>If you keep this match:</span>
+                <span class="path-cell new-path" data-path-cell="true">{{ card.new_path or card.target or card.in_place_target }}</span>
+                <div class="quick-actions">
+                  <button type="button" class="btn small" data-keep-match data-item-key="{{ card.item_key }}">Keep this match</button>
+                  <span class="muted small">or check the match to pick another</span>
+                </div>
+              </div>
+            {% elif row.status == 'needs' and card %}
+              {% set q = card.quick_match %}
+              <div class="best-guess{% if q %} quick-match{% endif %}">
+                {% if q %}
+                  {% if q.poster_url %}
+                    <img loading="lazy" class="poster thumb" src="{{ q.poster_url }}" alt="Poster for {{ q.label }}">
+                  {% else %}
+                    <div role="img" aria-label="Poster placeholder" class="poster-box thumb">poster</div>
+                  {% endif %}
+                {% endif %}
+                <div class="quick-copy">
+                  {% if q %}
+                    <div><strong>{{ q.label }}</strong> <span class="muted small">top TMDB match · same year as the name</span></div>
+                  {% endif %}
+                  <span>If you confirm the top match:</span>
+                  <span class="path-cell new-path" data-path-cell="true" data-best-guess>{{ card.best_guess_target or card.in_place_target or card.target }}</span>
+                  {% if q %}
+                    <div class="quick-actions">
+                      <button type="button" class="btn small primary" data-quick-match data-item-key="{{ card.item_key }}" data-tmdb-id="{{ q.tmdb_id }}" data-kind="{{ q.kind }}">Use this match</button>
+                      <span class="muted small">adds it to Execute · nothing changes yet</span>
+                    </div>
+                  {% endif %}
+                </div>
+              </div>
+            {% elif row.selectable and card %}
+              {% set here = card.in_place %}
+              {% if card.poster_only %}
+              <div class="outcome" data-outcome="poster">
+                <span class="outcome-verb">Already named right · save the poster</span>
+                →
+                <span class="path-cell new-path" data-path-cell="true">{{ card.poster }}</span>
+              </div>
+              {% else %}
+              {% if card.current_name and card.new_name and card.current_name != card.new_name %}
+                <div class="name-diff" data-name-diff>{{ diff_html(card.name_diff) | safe }}</div>
+              {% endif %}
+              <div class="outcome" data-outcome="{{ 'in_place' if here else 'file' }}">
+                {% if here %}
+                  <span class="outcome-verb">Rename here</span>
+                {% elif card.current_name == card.new_name %}
+                  <span class="outcome-verb">Move into {{ card.file_library or card.library or 'the destination' }}, same name</span>
+                {% else %}
+                  <span class="outcome-verb">Move into {{ card.file_library or card.library or 'the destination' }}</span>
+                {% endif %}
+                →
+                <span class="path-cell new-path" data-path-cell="true">{{ card.new_path or card.target or card.in_place_target }}</span>
+              </div>
+              {% if w.destination_path and not card.same_place and card.file_target %}
+                <div class="outcome-alt">
+                  {% if here %}
+                    <button type="button" class="link-button" data-row-mode="file" data-item-key="{{ card.item_key }}">Move into {{ card.file_library }} instead</button>
+                  {% else %}
+                    <button type="button" class="link-button" data-row-mode="in_place" data-item-key="{{ card.item_key }}">Rename here instead</button>
+                  {% endif %}
+                  {% if card.folder_mode and card.folder_mode != ('in_place' if here else 'file') %}
+                    <span class="tag">just this item</span>
+                  {% endif %}
+                </div>
+              {% endif %}
+              {% endif %}
+            {% elif row.status == 'tidy' and card %}
+              <div class="muted">Already named right – nothing to do</div>
+              <span class="path-cell" data-path-cell="true">{{ card.in_place_target if card.in_place else (card.target or card.current_path) }}</span>
+            {% elif card and card.target %}
+              <span class="path-cell new-path" data-path-cell="true">{{ card.target }}</span>
+            {% elif card and card.in_place_target %}
+              <span class="path-cell new-path" data-path-cell="true">{{ card.in_place_target }}</span>
+            {% else %}
+              <span class="muted">Nothing to do</span>
+            {% endif %}
+          </td>
+          <td>
+            {{ status_pill(row.status) }}
+            {% if row.match_key %}
+              <div class="row-action"><a href="/match/{{ row.match_key }}">Check the match</a></div>
+            {% endif %}
+            {% if row.status == 'ready' and row.path %}
+              <div class="row-action"><a href="#" data-browse="{{ row.path }}">Open folder</a></div>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      <tr data-filter-empty hidden><td colspan="5" class="empty">Nothing in this folder <span data-filter-empty-what>matches this filter</span>.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+{{ action_bar(
+  '<span data-count-list="inbox">' ~ inbox.counts.ready ~ '</span> items selected · <span data-file-into-library-count="inbox">0</span> to move, <span data-in-place-count="inbox">0</span> to rename here',
+  'Nothing moves yet. These go to the Execute page, where you check and apply everything at once.',
+  'Add <span data-button-count="inbox">' ~ inbox.counts.ready ~ '</span> items to Execute',
+  'data-queue-items data-list="inbox" data-source="inbox"'
+) }}
+{{ folder_picker() }}
+{% endblock %}

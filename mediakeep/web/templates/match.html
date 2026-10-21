@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% from "_macros.html" import clean, kind_word %}
+
+{% block title %}Fix a match{% endblock %}
+
+{% block main %}
+<div class="match-page" data-match-key="{{ match.item_key }}" data-current-kind="{{ match.selected.kind }}">
+  <a class="back-link" href="/inbox">← Back to Folder</a>
+
+  <div class="page-copy">
+    <h1>Which movie is this?</h1>
+    <p class="intro">mediakeep is {{ (match.card.confidence if match.card else 0) | int }}% sure. Pick the right one, search, or type the name yourself.</p>
+  </div>
+
+  <section aria-label="The file" class="panel file-panel">
+    <div class="file-path mono" data-path-cell="true">{{ match.file }}</div>
+    <div class="file-grid">
+      <div>
+        <div class="label">Title read from name</div>
+        <div class="value">{{ clean(match.selected.title) }}</div>
+      </div>
+      <div>
+        <div class="label">Year</div>
+        <div class="value">{{ match.selected.year if match.selected.year is not none else '—' }}</div>
+      </div>
+      <div>
+        <div class="label">Runtime</div>
+        <div class="value">
+          {% if match.card and match.card.identity and match.card.identity.runtime_min %}
+            {{ match.card.identity.runtime_min }} min
+          {% else %}
+            —
+          {% endif %}
+        </div>
+      </div>
+      <div>
+        <div class="label">Kind</div>
+        <div class="kind-toggle" role="group" aria-label="Kind">
+          <button type="button" class="chip small {% if match.selected.kind == 'movie' %}active{% endif %}" data-kind-button="movie" aria-pressed="{% if match.selected.kind == 'movie' %}true{% else %}false{% endif %}">Movie</button>
+          <button type="button" class="chip small {% if match.selected.kind == 'show' %}active{% endif %}" data-kind-button="show" aria-pressed="{% if match.selected.kind == 'show' %}true{% else %}false{% endif %}">TV show</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-label="Suggestions" class="panel suggestions-panel">
+    <h2>Suggestions from TMDB</h2>
+    <div id="candidate-list" class="candidate-list">
+      {% for c in match.candidates %}
+        <label class="candidate-card">
+          <input type="radio" name="pick" value="{{ c.tmdb_id }}" data-tmdb-id="{{ c.tmdb_id }}" data-kind="{{ c.kind }}" data-title="{{ clean(c.title) }}" data-year="{{ c.year if c.year is not none else '' }}" {% if match.selected.tmdb_id == c.tmdb_id %}checked{% endif %}>
+          {% if c.poster_url %}
+            <img loading="lazy" class="poster" src="{{ c.poster_url }}" alt="Poster for {{ clean(c.title) }}">
+          {% else %}
+            <div role="img" aria-label="Poster placeholder" class="poster-box">poster</div>
+          {% endif %}
+          <div class="candidate-copy">
+            <div class="candidate-title" data-tmdb-title="true">{{ clean(c.tmdb_title) }}</div>
+            <div class="candidate-meta">
+              {{ c.year if c.year is not none else '—' }} · {{ c.runtime_min if c.runtime_min else '—' }} min · {{ kind_word(c.kind) }}
+            </div>
+            <div class="chips reason-chips">
+              {% for r in c.reasons %}<span class="reason">{{ clean(r) }}</span>{% endfor %}
+            </div>
+          </div>
+        </label>
+      {% else %}
+        <p class="empty">No suggestions found.</p>
+      {% endfor %}
+    </div>
+
+    <div class="search-box">
+      <label class="field grow">
+        <span>None of these? Search TMDB</span>
+        <input type="search" id="search-query" value="{{ clean(match.selected.title) }}">
+      </label>
+      <label class="field">
+        <span>Year</span>
+        <input type="text" inputmode="numeric" id="search-year" value="{{ match.selected.year if match.selected.year is not none else '' }}">
+      </label>
+      <button type="button" class="btn" data-match-search>Search</button>
+      <details class="manual-entry">
+        <summary>or type the name yourself</summary>
+        <label class="field">
+          <span>Manual title</span>
+          <input type="text" id="manual-title" value="{{ clean(match.selected.title) }}">
+        </label>
+        <label class="field">
+          <span>Manual year</span>
+          <input type="text" inputmode="numeric" id="manual-year" value="{{ match.selected.year if match.selected.year is not none else '' }}">
+        </label>
+        <label class="field">
+          <span>Kind</span>
+          <select id="manual-kind">
+            <option value="movie" {% if match.selected.kind == 'movie' %}selected{% endif %}>Movie</option>
+            <option value="show" {% if match.selected.kind == 'show' %}selected{% endif %}>TV show</option>
+          </select>
+        </label>
+      </details>
+    </div>
+  </section>
+
+  <section aria-label="Result" class="panel result-panel">
+    <h2>It will be filed as</h2>
+    {% if match.preview.target %}
+      <div id="match-target" class="path-cell new-path" data-path-cell="true">{{ match.preview.target }}</div>
+    {% else %}
+      <div id="match-target" class="muted">—</div>
+    {% endif %}
+
+    {% if match.short_title %}
+      <label class="inline-check">
+        <input type="checkbox" id="use-short-title">
+        <span>Use the short title instead: <strong>{{ clean(match.short_title) }}</strong></span>
+      </label>
+    {% endif %}
+
+    <label class="inline-check">
+      <input type="checkbox" id="remember-choice" {% if config_remember %}checked{% endif %}>
+      <span>Remember this choice, so the next file named "{{ clean(match.selected.title) }}" is filed the same way without asking. <a href="/fixes">See remembered fixes</a></span>
+    </label>
+  </section>
+
+  <div class="match-actions">
+    {% if config_folder_jpg %}<p class="small muted match-poster-note" data-poster-note>When you apply it on Execute, the chosen poster is also saved in the item's folder as <span class="mono">folder.jpg</span> (unless the folder already has one).</p>{% endif %}
+    <button type="button" class="btn" data-match-skip>Skip for now</button>
+    <button type="button" class="btn primary" data-match-choose>Use this match and add to Execute</button>
+  </div>
+</div>
+{% endblock %}

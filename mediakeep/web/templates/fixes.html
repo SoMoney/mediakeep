@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% from "_macros.html" import clean, select_all_header %}
+
+{% block title %}Remembered fixes{% endblock %}
+
+{% block main %}
+<div class="page-head">
+  <div class="page-copy">
+    <h1>Remembered fixes</h1>
+    <p class="intro">When you correct mediakeep, for example by picking the right movie, it remembers the correction here, so the same file or folder is handled your way next time, even after a rescan. You rarely add these by hand; they are saved for you whenever you tick "Remember this choice" on a match (that box starts unticked unless you turn it on in <a href="/settings">Settings</a>, under Matching).</p>
+  </div>
+  <div class="head-actions">
+    <details class="import-box">
+      <summary class="btn">Import jf-hints.txt</summary>
+      <label class="field">
+        <span>File path</span>
+        <input type="text" id="import-path" placeholder="C:\Media\jf-hints.txt">
+      </label>
+      <button type="button" class="btn primary" data-fixes-import>Import</button>
+    </details>
+    <a class="btn" href="/api/fixes/export">Export</a>
+  </div>
+</div>
+
+<div class="table-box" data-select-list="fixes">
+  <div class="table-toolbar">
+    <button type="button" class="btn small danger" data-forget-selected>Forget selected</button>
+  </div>
+  <table class="data-table">
+    <thead>
+      <tr>
+        {{ select_all_header("Select all fixes", "fixes") }}
+        <th scope="col">When a file or folder is named</th>
+        <th scope="col">mediakeep will</th>
+        <th scope="col">Saved</th>
+        <th scope="col"><span class="sr-only">Actions</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in fixes.rows %}
+        {% set action_value = 'ignore' if row.options.get('ignore') else 'split' if row.options.get('split') else 'show' if row.options.get('kind') == 'show' else 'movie' if row.options.get('kind') == 'movie' else 'match' %}
+        <tr>
+          <td class="check-cell">
+            <input type="checkbox" class="checkbox" data-select-row data-list="fixes" data-fix-id="{{ row.id }}" aria-label="Select fix {{ row.pattern }}">
+          </td>
+          <td class="mono">{{ row.pattern }}</td>
+          <td>
+            <strong>{{ clean(row.action) }}</strong>
+            <div class="sub">{{ clean(row.detail) }}</div>
+          </td>
+          <td>
+            <div>{{ row.origin_label }}</div>
+            <div class="sub">{{ row.created_at }}</div>
+          </td>
+          <td class="actions-cell">
+            <details class="edit-fix">
+              <summary class="link-button">Edit</summary>
+              <div class="edit-form">
+                <label class="field"><span>Name</span><input type="text" data-edit-pattern value="{{ row.pattern }}"></label>
+                <label class="field"><span>Also file as</span><input type="text" data-edit-name value="{{ row.name }}"></label>
+                <label class="field">
+                  <span>Action</span>
+                  <select data-edit-action>
+                    {% for a in fixes.actions %}
+                      <option value="{{ a.value }}" {% if action_value == a.value %}selected{% endif %}>{{ a.label }}</option>
+                    {% endfor %}
+                  </select>
+                </label>
+                <label class="field {% if action_value != 'match' %}hidden{% endif %}" data-extra-tmdb>
+                  <span>TMDB id</span>
+                  <input type="text" inputmode="numeric" data-edit-tmdb value="{{ row.options.get('tmdb') or '' }}">
+                </label>
+                <label class="field {% if action_value != 'match' %}hidden{% endif %}" data-extra-kind>
+                  <span>Kind</span>
+                  <select data-edit-kind>
+                    <option value="movie" {% if row.options.get('kind') != 'show' %}selected{% endif %}>Movie</option>
+                    <option value="show" {% if row.options.get('kind') == 'show' %}selected{% endif %}>TV show</option>
+                  </select>
+                </label>
+                <button type="button" class="btn primary small" data-fix-edit data-fix-id="{{ row.id }}">Save</button>
+              </div>
+            </details>
+            <span class="sep" aria-hidden="true">|</span>
+            <button type="button" class="link-button danger" data-fix-forget data-fix-id="{{ row.id }}">Forget</button>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="5" class="empty">No remembered fixes yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<section aria-label="Add a fix by hand" class="panel dashed-panel">
+  <h2>Add a fix by hand</h2>
+  <div class="fix-builder">
+    <label class="field">
+      <span>When a file or folder is named</span>
+      <input type="text" id="new-fix-pattern" placeholder="e.g. The Lighthouse Keepers">
+    </label>
+    <label class="field">
+      <span>mediakeep will</span>
+      <select id="new-fix-action" data-new-fix-action>
+        {% for a in fixes.actions %}<option value="{{ a.value }}">{{ a.label }}</option>{% endfor %}
+      </select>
+    </label>
+    <label class="field hidden" data-new-extra="match">
+      <span>TMDB id</span>
+      <input type="text" inputmode="numeric" id="new-fix-tmdb">
+    </label>
+    <label class="field hidden" data-new-extra="match">
+      <span>Kind</span>
+      <select id="new-fix-kind">
+        <option value="movie">Movie</option>
+        <option value="show">TV show</option>
+      </select>
+    </label>
+    <button type="button" class="btn primary" data-fix-add>Save fix</button>
+  </div>
+  <p class="note">Matching ignores dots, case and quality tags such as 720p, so "the.lighthouse.keepers.s01e01.720p.mkv" counts as "The Lighthouse Keepers".</p>
+</section>
+{% endblock %}

@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% from "_macros.html" import clean, folder_picker %}
+
+{% block title %}Settings{% endblock %}
+
+{% block main %}
+<style>
+  .field-error { color: #b45309; font-weight: 600; margin-top: 4px; }
+  .folder-picker { max-width: 680px; width: min(680px, calc(100vw - 32px)); }
+  .folder-list { max-height: 340px; overflow: auto; margin: 12px 0; padding-left: 18px; }
+  .folder-crumb { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+  .folder-crumb .crumb { border: 0; background: transparent; color: inherit; cursor: pointer; padding: 0; font: inherit; text-decoration: underline; }
+  .folder-toolbar { display: flex; gap: 10px; align-items: center; margin-top: 8px; }
+</style>
+
+<div class="page-copy">
+  <h1>Settings</h1>
+  <p class="intro">Folders, matching, naming and services. Changes here take effect as soon as you click. They change settings only, never your media files.</p>
+</div>
+
+{% if settings.warnings %}
+  <div class="warning-box">
+    <strong>Warnings</strong>
+    <ul>{% for w in settings.warnings %}<li>{{ clean(w) }}</li>{% endfor %}</ul>
+  </div>
+{% endif %}
+
+<section class="panel" id="folders" aria-label="Folders" data-setting-panel="folders">
+  <h2>Folders</h2>
+  <p class="muted small">mediakeep works on one folder at a time. Change it, or where its items go, at the top of the <a href="/inbox">Folder</a> page.</p>
+  <div class="path-grid">
+    <span class="path-label">Working folder</span>
+    <span class="path-value">{% if settings.workspace.folder %}<span class="path-cell" data-path-cell="true">{{ settings.workspace.folder }}</span>{% else %}—{% endif %}</span>
+    <span class="path-label">Destination</span>
+    <span class="path-value">
+      {% if settings.workspace.destination %}<span class="path-cell" data-path-cell="true">{{ settings.workspace.destination }}</span>
+      {% else %}Rename here (items stay in the working folder){% endif %}
+    </span>
+  </div>
+  {% if not settings.workspace.folder %}
+    <p>No working folder yet. <a href="/inbox">Choose one on the Folder page.</a></p>
+  {% endif %}
+  {% if settings.workspace.recent %}
+    <h3>Recent folders</h3>
+    <table class="data-table compact">
+      <tbody>
+        {% for r in settings.workspace.recent %}
+          <tr>
+            <td><span class="path-cell" data-path-cell="true">{{ r.path }}</span>{% if r.current %} <span class="tag">working in it now</span>{% endif %}{% if not r.exists %} <span class="tag">not found</span>{% endif %}</td>
+            <td>{% if not r.current %}<button type="button" class="btn small" data-forget-recent="{{ r.path }}">Forget</button>{% endif %}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+</section>
+
+
+<section class="panel" aria-label="Matching" data-setting-panel="matching">
+  <h2>Matching</h2>
+  <label class="inline-check">
+    <input type="checkbox" data-setting-path="behavior.remember_choices" data-setting-label="Remember match choices by default" {% if settings.config.behavior.remember_choices %}checked{% endif %}>
+    <span>Tick "Remember this choice" by default when I pick a match</span>
+  </label>
+  <p class="muted small">Off: a match you pick is kept for that item, but isn't applied to other files with the same name. On: it is also saved under <a href="/fixes">Remembered fixes</a>, so the next file with that name and year is filed the same way.</p>
+</section>
+
+<section class="panel" aria-label="Naming">
+  <h2>Naming</h2>
+  <div class="two-col">
+    <label class="field">
+      <span>Year style</span>
+      <select data-setting-path="naming.year_style" data-setting-label="Year style">
+        <option value="parens" {% if settings.config.naming.year_style == 'parens' %}selected{% endif %}>(2014)</option>
+        <option value="brackets" {% if settings.config.naming.year_style == 'brackets' %}selected{% endif %}>[2014]</option>
+      </select>
+    </label>
+    <label class="field">
+      <span>ID tag</span>
+      <select data-setting-path="naming.id_tag" data-setting-label="ID tag">
+        <option value="none" {% if settings.config.naming.id_tag == 'none' %}selected{% endif %}>None</option>
+        <option value="tmdb" {% if settings.config.naming.id_tag == 'tmdb' %}selected{% endif %}>TMDB</option>
+        <option value="imdb" {% if settings.config.naming.id_tag == 'imdb' %}selected{% endif %}>IMDB</option>
+      </select>
+    </label>
+    <label class="inline-check">
+      <input type="checkbox" data-setting-path="naming.keep_episode_titles" data-setting-label="Keep episode titles" {% if settings.config.naming.keep_episode_titles %}checked{% endif %}>
+      <span>Keep episode titles</span>
+    </label>
+    <label class="inline-check">
+      <input type="checkbox" data-setting-path="naming.lores_tagging" data-setting-label="LoRes tagging on smaller duplicate" {% if settings.config.naming.lores_tagging %}checked{% endif %}>
+      <span>LoRes tagging on smaller duplicate</span>
+    </label>
+    <label class="inline-check">
+      <input type="checkbox" data-setting-path="naming.folder_jpg" data-setting-label="Save the poster as folder.jpg" {% if settings.config.naming.folder_jpg %}checked{% endif %}>
+      <span>Save the matched poster as folder.jpg</span>
+    </label>
+  </div>
+  <div class="example-box">
+    <div><span class="label">Movie</span><div class="path-cell" data-path-cell="true">{{ settings.naming_example.movie }}</div></div>
+    <div><span class="label">Episode</span><div class="path-cell" data-path-cell="true">{{ settings.naming_example.episode }}</div></div>
+  </div>
+</section>
+
+<section class="panel" id="services" aria-label="Services">
+  <h2>Services</h2>
+  <div class="two-col">
+    <label class="field">
+      <span>TMDB key</span>
+      <input type="password" data-secret="true" value="{{ settings.config.tmdb.api_key }}" data-setting-path="tmdb.api_key" data-setting-label="TMDB key">
+      <span class="small muted">Free from themoviedb.org: Settings → API. Needed to recognise titles.</span>
+    </label>
+    <div class="field">
+      <span>TMDB</span>
+      <button type="button" class="btn" data-test-tmdb>Test the key</button>
+      <span class="small muted" data-tmdb-result role="status"></span>
+    </div>
+    <label class="field">
+      <span>Web access token</span>
+      <input type="password" data-secret="true" value="{{ settings.config.web.access_token }}" data-setting-path="web.access_token" data-setting-label="Web access token">
+      <span class="small muted">Only needed if other computers open this page. Leave empty on your own PC.</span>
+    </label>
+  </div>
+</section>
+
+{{ folder_picker() }}
+{% endblock %}

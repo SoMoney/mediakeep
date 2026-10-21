@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% from "_macros.html" import clean, group_header %}
+
+{% block title %}Execute{% endblock %}
+
+{% block main %}
+{% set ns = namespace(checked=0, files=0) %}
+{% for row in execute.rows %}
+  {% if row.checked %}
+    {% set ns.checked = ns.checked + 1 %}
+    {% set ns.files = ns.files + row.file_count %}
+  {% endif %}
+{% endfor %}
+
+<div class="page-copy">
+  <h1>Execute</h1>
+  <p class="intro">Everything you added from the Folder page, collected here. <strong>Nothing on disk has changed yet.</strong> Check the list, untick anything you don't want, then apply. You can undo the whole run afterwards.</p>
+</div>
+
+{% if execute.dropped %}
+  <div class="notice" data-dropped>
+    <strong>Took {{ execute.dropped | length }} {{ 'entry' if execute.dropped | length == 1 else 'entries' }} off the list</strong> because there is nothing left for {{ 'it' if execute.dropped | length == 1 else 'them' }} to do:
+    <ul>
+      {% for d in execute.dropped[:10] %}<li>{{ clean(d.label) }} – {{ d.reason }}</li>{% endfor %}
+      {% if execute.dropped | length > 10 %}<li>and {{ execute.dropped | length - 10 }} more</li>{% endif %}
+    </ul>
+  </div>
+{% endif %}
+
+<section aria-label="Summary" class="tiles">
+  <div class="tile"><div class="tile-value">{{ execute.tiles.moved_files }}</div><div class="tile-label">files moved to the destination</div></div>
+  <div class="tile"><div class="tile-value">{{ execute.tiles.renamed_files }}</div><div class="tile-label">renamed in place ({{ execute.counts.folders }} folders, {{ execute.tiles.renamed_files }} files)</div></div>
+  <div class="tile"><div class="tile-value">0</div><div class="tile-label">files deleted (only emptied folders are removed)</div></div>
+</section>
+
+<div id="execute-groups">
+  {% for group in execute.groups %}
+    {% set group_note = '' if group.source.startswith('in_place:') else group.path %}
+    <section class="group-card" aria-label="{{ group.label }}">
+      {{ group_header(
+        group.label ~ ' · ' ~ group.count,
+        group_note,
+        group.link,
+        'change on the Folder page',
+        group.source,
+        'Keep all of ' ~ group.label
+      ) }}
+      <div class="table-box">
+        <table class="data-table compact">
+          <thead>
+            <tr>
+              <th scope="col" class="check-cell"><span class="sr-only">Keep</span></th>
+              <th scope="col">Change</th>
+              <th scope="col">From</th>
+              <th scope="col">To</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in group.rows %}
+              <tr class="{% if loop.index > 3 %}js-hidden-row{% endif %}" data-entry-kind="{{ row.entry_kind }}">
+                <td class="check-cell">
+                  <input type="checkbox" class="checkbox" data-select-row data-list="{{ group.source }}" data-queue-id="{{ row.queue_id }}" data-files="{{ row.file_count }}" {% if row.checked %}checked{% endif %} aria-label="Keep this change">
+                </td>
+                <td class="change-kind">{{ clean(row.kind) }}</td>
+                <td>
+                  {% if row.from_paths and row.from_paths[0] %}
+                    <span class="path-cell old-path" data-path-cell="true">{{ row.from_paths[0] }}</span>
+                  {% else %}
+                    <span class="muted">—</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if row.to_paths and row.to_paths[0] %}
+                    <span class="path-cell new-path" data-path-cell="true">{{ row.to_paths[0] }}</span>
+                  {% else %}
+                    <span class="muted">—</span>
+                  {% endif %}
+                  {% if row.poster %}<div class="small muted" data-poster-note>+ saves the poster as <span class="mono">folder.jpg</span></div>{% endif %}
+                  {% if row.updated %}<div class="tag">updated since you added it</div>{% endif %}
+                  {% if row.note %}<div class="tag">{{ clean(row.note) }}</div>{% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+            {% if group.rows | length > 3 %}
+              <tr><td colspan="4"><button type="button" class="btn small" data-show-all>Show all {{ group.rows | length }}</button></td></tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  {% else %}
+    <p class="empty">Nothing is waiting on Execute yet.</p>
+  {% endfor %}
+</div>
+
+<section aria-label="Apply" class="apply-bar">
+  <div class="apply-copy">
+    <strong>Apply <span data-count-scope="execute">{{ ns.checked }}</span> changes (<span data-file-scope="execute">{{ ns.files }}</span> files and folders)</strong>
+    <span>Same drive, so these are renames and finish in seconds. Afterwards you get an Undo button here and in History, plus an undo script you can run on its own.</span>
+  </div>
+  <div class="apply-actions">
+    <button type="button" class="btn ghost" data-clear-queue>Clear the list</button>
+    <button type="button" class="btn primary" data-open-apply>Apply <span data-count-scope="execute">{{ ns.checked }}</span> changes…</button>
+  </div>
+</section>
+
+<section id="execute-result" class="panel result-panel" hidden></section>
+
+<section id="last-run" class="panel last-run-panel" hidden>
+  <div id="last-run-body"></div>
+</section>
+{% endblock %}

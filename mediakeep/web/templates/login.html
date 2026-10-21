@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}Sign in{% endblock %}
+
+{% block main %}
+<section class="login-box panel">
+  <h1>mediakeep</h1>
+  <label class="field">
+    <span>Access token</span>
+    <input type="password" id="login-token" autocomplete="current-password">
+  </label>
+  <button type="button" class="btn primary" data-login>Sign in</button>
+</section>
+{% endblock %}

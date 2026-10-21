@@ -1,0 +1,154 @@
+{% macro clean(text) -%}
+{%- set t = (text or '') | string -%}
+{%- set t = t | replace('identity', 'match') -%}
+{%- set t = t | replace('Identity', 'Match') -%}
+{%- set t = t | replace('IDENTITY', 'MATCH') -%}
+{%- set t = t | replace('override', 'change') -%}
+{%- set t = t | replace('Override', 'Change') -%}
+{%- set t = t | replace('OVERRIDE', 'CHANGE') -%}
+{%- set t = t | replace('batch', 'item') -%}
+{%- set t = t | replace('Batch', 'Item') -%}
+{%- set t = t | replace('plan', 'item') -%}
+{%- set t = t | replace('Plan', 'Item') -%}
+{%- set t = t | replace('hint', 'fix') -%}
+{%- set t = t | replace('Hint', 'Fix') -%}
+{%- set t = t | replace('rename in place', 'rename here') -%}
+{%- set t = t | replace('Rename in place', 'Rename here') -%}
+{%- set t = t | replace('needs review', 'needs a look') -%}
+{%- set t = t | replace('Needs review', 'Needs a look') -%}
+{{ t }}
+{%- endmacro %}
+
+{% macro status_label(status) -%}
+{%- if status == 'ready' -%}Ready
+{%- elif status == 'needs' -%}Needs you
+{%- elif status == 'left' -%}Left alone
+{%- elif status == 'tidy' -%}Already tidy
+{%- elif status == 'unknown' -%}Not recognised
+{%- else -%}{{ clean(status) }}
+{%- endif -%}
+{%- endmacro %}
+
+{% macro status_pill(status) -%}
+<span class="pill pill-{{ status }}">{{ status_label(status) }}</span>
+{%- endmacro %}
+
+{% macro kind_word(kind) -%}
+{%- if kind == 'movie' -%}movie
+{%- elif kind == 'show' -%}TV show
+{%- elif kind == 'dvd' -%}DVD
+{%- elif kind == 'bluray' -%}Blu-ray
+{%- elif kind == 'collection' -%}collection
+{%- else -%}item
+{%- endif -%}
+{%- endmacro %}
+
+{% macro reason_text(reason) -%}
+{%- if reason == 'skipped' -%}left out
+{%- elif reason == 'no changes' -%}nothing to do
+{%- elif reason == 'needs review' -%}needs a look
+{%- elif reason == 'attention' -%}needs a look
+{%- elif reason == 'ready' -%}ready
+{%- elif reason == 'identity' -%}needs a match
+{%- else -%}{{ clean(reason) }}
+{%- endif -%}
+{%- endmacro %}
+
+{% macro file_count_label(count) -%}
+{{ count }} {{ 'file' if count == 1 else 'files' }}
+{%- endmacro %}
+
+{% macro diff_html(parts) -%}
+{%- for part in parts -%}
+{%- if part.op == 'added' -%}
+<ins data-diff-added>{{ part.text }}</ins>
+{%- elif part.op == 'removed' -%}
+<del data-diff-removed>{{ part.text }}</del>
+{%- else -%}
+{{ part.text }}
+{%- endif -%}
+{%- if not loop.last %} {% endif -%}
+{%- endfor -%}
+{%- endmacro %}
+
+{% macro title_choice(choice) -%}
+{% if choice %}
+<fieldset class="title-choice" data-title-choice-row>
+  <legend>Keep your title or use TMDB's</legend>
+  <label>
+    <input
+      type="radio"
+      name="title-choice-{{ choice.item_key }}"
+      value="keep"
+      data-title-choice
+      data-item-key="{{ choice.item_key }}"
+      {% if choice.current == 'keep' %}checked{% endif %}
+    >
+    <span>Keep your title: <span class="mono">{{ choice.keep_name }}</span></span>
+  </label>
+  <label>
+    <input
+      type="radio"
+      name="title-choice-{{ choice.item_key }}"
+      value="tmdb"
+      data-title-choice
+      data-item-key="{{ choice.item_key }}"
+      {% if choice.current == 'tmdb' %}checked{% endif %}
+    >
+    <span>Use TMDB's: <span class="mono">{{ choice.tmdb_name }}</span></span>
+  </label>
+</fieldset>
+{% endif %}
+{%- endmacro %}
+
+{% macro path_pair(label, old, new) -%}
+<span class="path-label">{{ label }}</span>
+<span class="path-value">
+  {% if old %}<span class="old-path" data-path-cell="true">{{ old }}</span><br>{% endif %}
+  {% if new %}<span class="new-path" data-path-cell="true">{{ new }}</span>{% endif %}
+</span>
+{%- endmacro %}
+
+{% macro action_bar(count_html, note, label, button_attrs) -%}
+<div class="action-bar">
+  <div class="action-copy">
+    <strong>{{ count_html | safe }}</strong>
+    <span>{{ note }}</span>
+  </div>
+  <button type="button" class="btn primary" {{ button_attrs | safe }}>{{ label | safe }}</button>
+</div>
+{%- endmacro %}
+
+{% macro select_all_header(label, list_id) -%}
+<th scope="col" class="check-cell"><input type="checkbox" class="checkbox" data-select-all data-list="{{ list_id }}" aria-label="{{ label }}"></th>
+{%- endmacro %}
+
+{% macro group_header(title, note, link, link_label, list_id, keep_label) -%}
+<div class="group-header">
+  <label class="group-title">
+    <input type="checkbox" class="checkbox" data-select-all data-list="{{ list_id }}" aria-label="{{ keep_label }}">
+    <span>{{ title }}</span>
+  </label>
+  <span class="group-meta">
+    {% if note %}<span class="mono" data-path-cell="true">{{ note }}</span> · {% endif %}
+    <a href="{{ link }}">{{ link_label }}</a>
+  </span>
+</div>
+{%- endmacro %}
+
+{% macro folder_picker() -%}
+<dialog id="folder-picker" class="folder-picker" data-folder-picker aria-labelledby="folder-picker-title">
+  <div class="dialog-card">
+    <h2 id="folder-picker-title">Choose a folder</h2>
+    <div class="folder-crumb" data-folder-crumb></div>
+    <div class="folder-toolbar">
+      <button type="button" class="btn small" data-folder-up>Up</button>
+    </div>
+    <ul class="folder-list" data-folder-list></ul>
+    <div class="dialog-actions">
+      <button type="button" class="btn secondary" data-folder-cancel>Cancel</button>
+      <button type="button" class="btn primary" data-folder-choose>Choose this folder</button>
+    </div>
+  </div>
+</dialog>
+{%- endmacro %}

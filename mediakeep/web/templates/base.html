@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mediakeep - {% block title %}{% endblock %}</title>
+<meta name="csrf-token" content="">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="{% block body_class %}{% endblock %}">
+<div class="shell">
+  <nav class="sidebar" aria-label="Main">
+    <div class="brand">mediakeep</div>
+    <a href="/inbox" class="nav-link {% if nav.active == 'inbox' %}active{% endif %}" {% if nav.active == 'inbox' %}aria-current="page"{% endif %}>Folder{% if nav.needs_count %}<span class="badge badge-orange">{{ nav.needs_count }}</span>{% endif %}</a>
+    <a href="/fixes" class="nav-link {% if nav.active == 'fixes' %}active{% endif %}" {% if nav.active == 'fixes' %}aria-current="page"{% endif %}>Remembered fixes</a>
+    <a href="/settings" class="nav-link {% if nav.active == 'settings' %}active{% endif %}" {% if nav.active == 'settings' %}aria-current="page"{% endif %}>Settings</a>
+    <div class="sidebar-divider" role="separator" aria-hidden="true"></div>
+    <a href="/execute" class="nav-link {% if nav.active == 'execute' %}active{% endif %}" {% if nav.active == 'execute' %}aria-current="page"{% endif %}>Execute <span class="badge badge-blue" id="execute-badge">{{ nav.queue_count }}</span></a>
+    <a href="/history" class="nav-link {% if nav.active == 'history' %}active{% endif %}" {% if nav.active == 'history' %}aria-current="page"{% endif %}>History & undo</a>
+  </nav>
+
+  <main id="main">
+    {% if code_changed %}
+      <div class="notice warn" data-restart-needed role="alert">
+        <strong>mediakeep was updated since this web app started.</strong>
+        Restart the web app to use the new version: until then it keeps running the old one.
+      </div>
+    {% endif %}
+    {% block main %}{% endblock %}
+  </main>
+</div>
+
+<div id="job-progress" class="job-progress" aria-live="polite" role="status"></div>
+
+<section id="job-panel" class="job-panel" aria-label="Progress" hidden>
+  <div class="job-head">
+    <strong data-job-title>Scanning</strong>
+    <span class="job-count" data-job-count></span>
+  </div>
+  <ol class="job-steps" data-job-steps>
+    <li data-step="scan">Reading folders</li>
+    <li data-step="classify">Sorting into movies and shows</li>
+    <li data-step="identify">Matching with TMDB</li>
+    <li data-step="plan">Working out the new names</li>
+  </ol>
+  <div class="job-bar" aria-hidden="true"><div data-job-bar></div></div>
+  <ul class="job-ticker" data-job-ticker aria-live="off"></ul>
+</section>
+
+<dialog id="confirm-dialog" class="confirm-dialog" aria-labelledby="confirm-title">
+  <div class="dialog-card">
+    <h2 id="confirm-title">Confirm</h2>
+    <div id="confirm-body" class="dialog-body"></div>
+    <div class="dialog-actions">
+      <button type="button" class="btn secondary" id="confirm-cancel">Cancel</button>
+      <button type="button" class="btn primary" id="confirm-ok">Confirm</button>
+    </div>
+  </div>
+</dialog>
+
+<script src="/static/app.js" defer></script>
+</body>
+</html>

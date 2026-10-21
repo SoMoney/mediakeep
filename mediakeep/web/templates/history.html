@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}History & undo{% endblock %}
+
+{% block main %}
+<div class="page-head">
+  <div class="page-copy">
+    <h1>History & undo</h1>
+    <p class="intro">Every applied run, newest first. Undo shows a preview before it changes anything.</p>
+  </div>
+  {% if history.runs %}
+    <div class="head-actions">
+      <button type="button" class="btn danger" data-forget-runs="all">Clear all history…</button>
+    </div>
+  {% endif %}
+</div>
+
+<div class="run-list">
+  {% for run in history.runs %}
+    <article class="run-card" data-run-id="{{ run.id }}">
+      <div class="run-head">
+        <div>
+          <strong>{{ run.started_at }}</strong>
+          <span class="tag">{{ run.kind }}</span>
+          <span class="tag">{{ run.status }}</span>
+        </div>
+        <div class="run-counts">Done {{ run.done }} · Failed {{ run.failed }} · Skipped {{ run.skipped }}</div>
+      </div>
+      <details>
+        <summary>Details</summary>
+        <ul>
+          <li>Files done: {{ run.done }}</li>
+          <li>Failed: {{ run.failed }}</li>
+          <li>Skipped: {{ run.skipped }}</li>
+          <li>Started: {{ run.started_at }}</li>
+          {% if run.finished_at %}<li>Finished: {{ run.finished_at }}</li>{% endif %}
+        </ul>
+        {% set script = run.undo_script %}
+        {% if script.exists %}
+          <div class="script-head">
+            <strong>Undo script</strong>
+            <span class="mono small">{{ script.path }}</span>
+            <span class="muted small">
+              {% if script.total > script.lines | length %}first {{ script.lines | length }} of {{ script.total }} lines – download it for the rest{% else %}{{ script.total }} lines{% endif %}
+            </span>
+          </div>
+          <pre class="script-preview" data-undo-script>{{ script.lines | join('\n') }}</pre>
+        {% else %}
+          <p class="muted small">No undo script was saved for this run.</p>
+        {% endif %}
+      </details>
+      <div class="run-actions">
+        <a class="btn small" href="/api/runs/{{ run.id }}/undo-script">Download undo script</a>
+        <button type="button" class="btn small danger" data-undo-run="{{ run.id }}">Undo this run…</button>
+        <button type="button" class="btn small" data-forget-runs="{{ run.id }}">Remove from history…</button>
+      </div>
+    </article>
+  {% else %}
+    <p class="empty">No runs yet.</p>
+  {% endfor %}
+</div>
+{% endblock %}

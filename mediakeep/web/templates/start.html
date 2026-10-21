@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% from "_macros.html" import folder_picker %}
+
+{% block title %}Folder{% endblock %}
+
+{% block main %}
+<div class="page-head">
+  <div class="page-copy">
+    <h1>Folder</h1>
+    <p class="intro">mediakeep works on one folder at a time. Choose the folder with your movies or shows to start. Nothing on disk changes until you apply on the Execute page.</p>
+  </div>
+</div>
+
+{% if not tmdb_ready %}
+  <div class="notice warn" role="note">
+    <strong>Add your TMDB key first.</strong>
+    mediakeep recognises titles with TMDB (free account). Paste your key under <a href="/settings#services">Settings → Services</a>.
+  </div>
+{% endif %}
+
+<section class="flow" aria-label="Working folder" data-flow data-workspace>
+  <div class="flow-card flow-from">
+    <div class="flow-step"><span class="flow-num">1</span> Working folder</div>
+    <div class="flow-path">No folder chosen yet.</div>
+    <div class="flow-actions">
+      <button type="button" class="btn primary" data-pick-workspace>Choose a folder…</button>
+      {% if recent %}
+        <label class="field compact">
+          <span class="sr-only">Recent folders</span>
+          <select data-recent-folder aria-label="Recent folders">
+            <option value="">Recent folders…</option>
+            {% for r in recent %}<option value="{{ r }}">{{ r }}</option>{% endfor %}
+          </select>
+        </label>
+      {% endif %}
+    </div>
+    <div class="field-error" data-workspace-error hidden></div>
+  </div>
+</section>
+
+<section class="panel" aria-label="How it works">
+  <h2>How it works</h2>
+  <ol class="steps-list">
+    <li><strong>Choose a folder.</strong> mediakeep scans it and works out what each movie or show is.</li>
+    <li><strong>Choose the destination.</strong> Rename everything where it is (the default), or move it into another folder.</li>
+    <li><strong>Check the list.</strong> Fix anything marked "Needs you", tick what you want and add it to Execute.</li>
+    <li><strong>Apply on Execute.</strong> Every change can be undone from History &amp; undo.</li>
+  </ol>
+</section>
+{{ folder_picker() }}
+{% endblock %}
