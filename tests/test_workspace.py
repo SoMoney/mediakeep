@@ -231,3 +231,16 @@ def test_cli_folder_command(tmp_path: Path, capsys: pytest.CaptureFixture[str]) 
     capsys.readouterr()
     assert __main__.main(["--config", str(cfg), "folder"]) == 0
     assert str(family) in capsys.readouterr().out
+
+
+def test_a_folder_with_two_episodes_is_a_show(tmp_path: Path) -> None:
+    from mediakeep.classify import classify
+    from mediakeep.models import MediaKind
+    from mediakeep.scan import scan_root
+
+    folder = tmp_path / "Family"
+    write_file(folder / "Bantam" / "bantam.s01e01.mkv", 100)
+    write_file(folder / "Bantam" / "bantam.s01e02.mkv", 100)
+    config = workspace.effective(_config(tmp_path, folder))
+    items, _issues, _samples = classify(config, {folder: scan_root(folder)}, [], set())
+    assert [i.kind for i in items] == [MediaKind.SHOW]

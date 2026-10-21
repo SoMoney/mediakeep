@@ -17,11 +17,11 @@
     <div class="file-grid">
       <div>
         <div class="label">Title read from name</div>
-        <div class="value">{{ clean(match.selected.title) }}</div>
+        <div class="value">{{ match.read.title }}</div>
       </div>
       <div>
         <div class="label">Year</div>
-        <div class="value">{{ match.selected.year if match.selected.year is not none else '—' }}</div>
+        <div class="value">{{ match.read.year if match.read.year is not none else '—' }}</div>
       </div>
       <div>
         <div class="label">Runtime</div>

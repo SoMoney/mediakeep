@@ -1323,6 +1323,8 @@ def match_view(
         "card": c,
         "candidates": candidates,
         "selected": selected,
+        # What the name on disk itself says (before any match).
+        "read": {"title": item.title or _current_path(item).name, "year": item.year},
         "preview": preview,
         "short_title": _short_title(str(selected["title"])),
         "remember_default": True,
@@ -1712,6 +1714,13 @@ def _sanitize_run_summary(summary: Any, plan: Plan | None, config: AppConfig) ->
     return summary
 
 
+def _took(start: datetime, end: datetime | None) -> str:
+    if end is None:
+        return ""
+    secs = max(0.0, (end - start).total_seconds())
+    return "under a second" if secs < 1 else f"{secs:.0f} seconds" if secs < 120 else f"{secs / 60:.0f} minutes"
+
+
 def history_view(config: AppConfig, store: Store, limit: int = 50) -> dict[str, Any]:
     runs: list[dict[str, Any]] = []
     for run in store.list_runs(limit):
@@ -1730,6 +1739,8 @@ def history_view(config: AppConfig, store: Store, limit: int = 50) -> dict[str, 
                 "skipped": run.skipped,
                 "started_at": run.started_at.isoformat(),
                 "finished_at": run.finished_at.isoformat() if run.finished_at else None,
+                "when": run.started_at.strftime("%d %b %Y, %H:%M"),
+                "took": _took(run.started_at, run.finished_at),
                 "plan_id": run.plan_id,
                 "summary": summary,
                 "undo_script": undo_script_preview(config, run.id),

@@ -1,6 +1,17 @@
-# mediakeep
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/banner-dark.png">
+    <img src="docs/images/banner-light.png" alt="mediakeep" width="640">
+  </picture>
+</p>
 
-**Tidy movie and TV folders into names Jellyfin understands, safely and with undo.**
+<p align="center">
+  Free · public domain · runs on your own PC · beta
+</p>
+
+<p align="center">
+  <img src="docs/images/hero.png" alt="Each item on disk, what mediakeep thinks it is, and the exact new name" width="820">
+</p>
 
 mediakeep looks at a folder of your video files (movies and TV shows), works out what each one is
 (using [TMDB](https://www.themoviedb.org/)), and renames it the way Jellyfin likes it:
@@ -12,10 +23,27 @@ mediakeep looks at a folder of your video files (movies and TV shows), works out
 | `the.lighthouse.keepers.s01e02.720p.mkv` | `The Lighthouse Keepers (2019)\Season 01\The Lighthouse Keepers (2019) S01E02 - The Fog Bell.mkv` |
 | `Neon Harbor 2049 [1080p]\neon.harbor.2049.2017.mkv` | `Neon Harbor 2049 (2017)\Neon Harbor 2049 (2017).mkv` |
 
-*(All titles in this README are made up.)*
+*(All titles, posters and screenshots in this README are made up for the demo.)*
 
 You check everything in a web page on your own computer before anything changes on disk,
 and every change can be undone.
+
+## A quick look
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/images/folder.png" alt="Folder page"><br><b>1. Choose a folder.</b> Rename everything where it is, or move it into another folder. Every row shows the full new path.</td>
+    <td width="50%"><img src="docs/images/scan.png" alt="Scanning"><br><b>2. Scan.</b> Watch the files go by while mediakeep reads names and asks TMDB what each one is.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/images/match.png" alt="Pick the right match"><br><b>3. Fix what it isn't sure about.</b> Pick from TMDB's suggestions with posters, search, or type the title yourself.</td>
+    <td><img src="docs/images/execute.png" alt="Execute page"><br><b>4. Apply.</b> Everything you approved, in one list. Untick anything, then apply.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/images/history.png" alt="History and undo"><br><b>5. Undo anytime.</b> Every run is recorded with an undo script you can read, download, or run with one click.</td>
+    <td><img src="docs/images/settings.png" alt="Settings"><br><b>Your naming, your way.</b> Year style, ID tags, episode titles and posters, with a live example.</td>
+  </tr>
+</table>
 
 > **Status: beta.** It works well on real libraries, but test it on a copy of a folder first
 > and keep backups of anything you can't replace.

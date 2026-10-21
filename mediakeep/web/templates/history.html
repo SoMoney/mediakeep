@@ -20,8 +20,8 @@
     <article class="run-card" data-run-id="{{ run.id }}">
       <div class="run-head">
         <div>
-          <strong>{{ run.started_at }}</strong>
-          <span class="tag">{{ run.kind }}</span>
+          <strong>{{ run.when }}</strong>
+          <span class="tag">{{ 'applied' if run.kind in ('apply', 'execute', 'scan') else run.kind }}</span>
           <span class="tag">{{ run.status }}</span>
         </div>
         <div class="run-counts">Done {{ run.done }} · Failed {{ run.failed }} · Skipped {{ run.skipped }}</div>
@@ -32,8 +32,8 @@
           <li>Files done: {{ run.done }}</li>
           <li>Failed: {{ run.failed }}</li>
           <li>Skipped: {{ run.skipped }}</li>
-          <li>Started: {{ run.started_at }}</li>
-          {% if run.finished_at %}<li>Finished: {{ run.finished_at }}</li>{% endif %}
+          <li>Started: {{ run.when }}{% if run.took %} (took {{ run.took }}){% endif %}</li>
+          <li>Run id: <span class="mono">{{ run.id }}</span></li>
         </ul>
         {% set script = run.undo_script %}
         {% if script.exists %}

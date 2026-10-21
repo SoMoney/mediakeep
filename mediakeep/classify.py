@@ -345,6 +345,9 @@ def _looks_show(entry: ScannedEntry) -> bool:
             distinct.add((ep.season, ep.episode))
     if numbered >= 3:
         return True
+    # Two episodes and nothing else (a short season so far) is a show too.
+    if numbered >= 2 and numbered == len(videos) and len(distinct) == numbered:
+        return True
     if len(videos) >= 6 and len(distinct) * 2 > len(videos):
         return True
     return False
